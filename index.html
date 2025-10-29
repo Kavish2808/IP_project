@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kavish Library</title>
+<style>
+:root{--panel:#0f1724;--muted:#9aa4b2;--accent:#7c5cff;--glass:rgba(255,255,255,0.04)}
+*{box-sizing:border-box}body{margin:0;font-family:Arial;background:linear-gradient(180deg,#061323,#071627);color:#e8f0fb;padding:24px}
+.wrap{max-width:980px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.brand{display:flex;gap:10px;align-items:center}
+.logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#4fd1c5);display:flex;align-items:center;justify-content:center;font-weight:700;color:#051025}
+.controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+input,select{background:var(--glass);border:1px solid rgba(255,255,255,0.05);padding:9px;border-radius:8px;color:inherit}
+.btn{padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);cursor:pointer;background:transparent;color:inherit;font-weight:600}
+.btn.primary{background:linear-gradient(90deg,var(--accent),#5ad1c6);color:#041022;border:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.card{padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03);cursor:pointer}
+.meta{display:flex;gap:10px;align-items:center}.avatar{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#ffd69f,#ff7ab6);display:flex;align-items:center;justify-content:center;color:#051025;font-weight:800}
+.foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.modal-back{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(1,6,20,0.6);z-index:50}
+.modal{width:520px;max-width:92%;background:var(--panel);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03)}
+.drawer{position:fixed;right:0;top:0;height:100%;width:320px;background:var(--panel);padding:14px;box-shadow:-14px 0 40px rgba(0,0,0,0.6);transform:translateX(110%);transition:transform .22s;z-index:40}
+.drawer.open{transform:translateX(0)}.small{font-size:13px;color:var(--muted)}.empty{padding:28px;border-radius:10px;border:1px dashed rgba(255,255,255,0.03);color:var(--muted);text-align:center}
+@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><div class="logo">KL</div><div><div style="font-weight:700">Kavish Library</div><div class="small">Student version</div></div></div>
+    <div>
+      <button class="btn" id="resetBtn">Reset</button>
+      <button class="btn primary" id="addBtn">Add Book</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <input id="q" placeholder="Search title / author / year" style="min-width:220px">
+    <select id="gf"><option>All</option></select>
+    <div style="flex:1"></div>
+    <div class="small">Showing <strong id="show">0</strong> of <strong id="tot">0</strong></div>
+  </div>
+
+  <div class="stats" style="display:flex;gap:10px;margin-bottom:12px">
+    <div style="flex:1;padding:8px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03)"><div class="small">Total Copies</div><div id="copies" style="font-weight:700">0</div></div>
+    <div style="flex:1;padding:8px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03)"><div class="small">Titles</div><div id="titles" style="font-weight:700">0</div></div>
+    <div style="flex:1;padding:8px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border:1px solid rgba(255,255,255,0.03)"><div class="small">Genres</div><div id="gcount" style="font-weight:700">0</div></div>
+  </div>
+
+  <div id="grid" class="grid"></div>
+  <div id="empty" class="empty" style="display:none">No books. Click Add Book.</div>
+</div>
+
+<div id="modalBack" class="modal-back" onclick="if(event.target===this)closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="mTitle">Add Book</h3>
+    <form id="f">
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="t" placeholder="Title" required style="flex:1"><input id="a" placeholder="Author" required style="flex:1"></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="g" placeholder="Genre" style="flex:1"><input id="c" type="number" min="1" value="1" style="width:110px"><input id="y" type="number" style="width:110px"></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button type="button" class="btn" id="cancel">Cancel</button><button type="submit" class="btn primary">Save</button></div>
+    </form>
+  </div>
+</div>
+
+<div id="drawer" class="drawer" aria-hidden="true"></div>
+
+<script>
+const LS='lib_v3';
+const sample=[{id:1,title:"The Pragmatic Programmer",author:"Andrew Hunt",genre:"Technology",copies:3,year:1999},
+{id:2,title:"Clean Code",author:"Robert C. Martin",genre:"Technology",copies:5,year:2008},
+{id:3,title:"The Alchemist",author:"Paulo Coelho",genre:"Fiction",copies:4,year:1988}];
+
+let books = JSON.parse(localStorage.getItem(LS)) || sample.slice();
+let editId = null;
+const $ = id => document.getElementById(id);
+const ids = ['grid','empty','q','gf','show','tot','copies','titles','gcount','modalBack','f','mTitle','t','a','g','c','y','drawer'];
+const [grid, empty, q, gf, show, tot, copies, titles, gcount, modalBack, form, mTitle, t, a, g, c, y, drawer] = ids.map($);
+
+$('addBtn').onclick = ()=>openModal();
+$('resetBtn').onclick = ()=>{ if(!confirm('Reset library to defaults?')) return; books = sample.slice(); localStorage.setItem(LS,JSON.stringify(books)); render(); };
+$('cancel').onclick = closeModal; q.oninput = gf.onchange = render;
+
+form.onsubmit = e => {
+  e.preventDefault();
+  if(!t.value.trim()||!a.value.trim()){ alert('Enter title & author'); return; }
+  const obj = { title:t.value.trim(), author:a.value.trim(), genre:(g.value||'General').trim(), copies:+c.value||1, year:+y.value||new Date().getFullYear() };
+  if(editId===null){ const id = books.length?Math.max(...books.map(b=>b.id))+1:1; books.unshift({id,...obj}); }
+  else { books = books.map(b=>b.id===editId?{...b,...obj}:b); editId=null; }
+  localStorage.setItem(LS, JSON.stringify(books)); closeModal(); render();
+};
+
+function render(){
+  const genres = ['All', ...new Set(books.map(b=>b.genre||'General'))];
+  gf.innerHTML = genres.map(x=>`<option>${x}</option>`).join('');
+  const qv = (q.value||'').toLowerCase(), sel = gf.value||'All';
+  const list = books.filter(b => (sel==='All'||b.genre===sel) && (!qv || b.title.toLowerCase().includes(qv) || b.author.toLowerCase().includes(qv) || String(b.year).includes(qv)));
+  copies.textContent = books.reduce((s,b)=>s + (+b.copies||0),0);
+  titles.textContent = books.length;
+  gcount.textContent = genres.length-1;
+  show.textContent = list.length; tot.textContent = books.length;
+  grid.innerHTML = list.length ? list.map(card).join('') : '';
+  empty.style.display = list.length ? 'none' : 'block';
+  Array.from(grid.querySelectorAll('.card')).forEach(c=>c.onclick = ()=>openDrawer(+c.dataset.id));
+}
+
+function card(b){
+  const i = (b.title||'').split(' ').slice(0,2).map(s=>s[0]).join('').toUpperCase()||'B';
+  return `<div class="card" data-id="${b.id}">
+    <div class="meta"><div class="avatar">${i}</div><div><strong>${escape(b.title)}</strong><div class="small" style="margin-top:6px">${escape(b.author)} • ${escape(b.genre)}</div></div></div>
+    <div class="foot"><div class="small">Copies: <strong>${b.copies}</strong></div>
+    <div><button class="btn" onclick="editBook(${b.id});event.stopPropagation()">Edit</button>
+    <button class="btn" onclick="delBook(${b.id});event.stopPropagation()">Delete</button></div></div></div>`;
+}
+
+function openModal(book){ editId = book ? book.id : null; mTitle.textContent = book ? 'Edit Book' : 'Add Book'; t.value = book ? book.title : ''; a.value = book ? book.author : ''; g.value = book ? book.genre : ''; c.value = book ? book.copies : 1; y.value = book ? book.year : new Date().getFullYear(); modalBack.style.display='flex'; t.focus(); }
+function editBook(id){ const b = books.find(x=>x.id===id); if(!b) return; openModal(b); }
+function delBook(id){ if(!confirm('Delete this book?')) return; books = books.filter(b=>b.id!==id); localStorage.setItem(LS, JSON.stringify(books)); render(); closeD(); }
+function closeModal(){ modalBack.style.display='none'; form.reset(); editId=null; }
+function openDrawer(id){ const b = books.find(x=>x.id===id); if(!b) return; drawer.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin:0">${escape(b.title)}</h3><button class="btn" onclick="closeD()">Close</button></div>
+<p class="small">by ${escape(b.author)}</p><div style="margin-top:10px"><div class="small">Genre</div><div style="font-weight:700">${escape(b.genre)}</div></div>
+<div style="margin-top:10px"><div class="small">Published</div><div style="font-weight:700">${b.year}</div></div><div style="margin-top:10px"><div class="small">Copies</div><div style="font-weight:700">${b.copies}</div></div>
+<div style="margin-top:12px"><button class="btn" onclick="editBook(${b.id})">Edit</button> <button class="btn" onclick="delBook(${b.id})">Delete</button></div>`; drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); }
+function closeD(){ drawer.classList.remove('open'); drawer.innerHTML=''; drawer.setAttribute('aria-hidden','true'); }
+function escape(s){ return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+
+render(); window.editBook=editBook; window.delBook=delBook; window.openDrawer=openDrawer; window.closeD=closeD;
+</script>
+</body>
+</html>
